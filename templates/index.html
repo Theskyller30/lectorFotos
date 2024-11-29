@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Escáner de Fotos</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+  <style>
+    body {
+      background-color: #f8f9fa; 
+    }
+    .container {
+      margin-top: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); 
+      padding: 30px;
+      background-color: #ffffff;
+    }
+    #resultado {
+      white-space: pre-wrap; 
+      font-family: monospace; 
+    }
+    #loading-imagen, #loading-escaneo {
+      display: flex;
+      justify-content: center;
+      margin-top: 10px; 
+    }
+    /* Estilos para el área de arrastrar y soltar */
+    #drop-area {
+      border: 2px dashed #ccc;
+      border-radius: 20px;
+      width: 400px; /* Ajusta el ancho según tus necesidades */
+      height: 200px; /* Ajusta la altura según tus necesidades */
+      margin: 20px auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      padding: 50px;
+      position: relative; /* Para posicionar el loading */
+    }
+    #drop-area.highlight {
+      border-color: purple;
+    }
+    #fileElem {
+      display: none;
+    }
+    /* Estilo para la imagen dentro del drop-area */
+    #drop-area img {
+      max-width: 100%;
+      max-height: 100%; 
+      display: none; 
+    }
+    /* Estilo para el loading dentro del drop-area */
+    #drop-area .spinner-border {
+      position: absolute; 
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      display: none; 
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 class="text-center mt-5">ESCÁNER DE FOTOS</h1>
+    <br>
+    <br>
+    <div class="row justify-content-center">
+      <div class="col-md-6">
+        <form method="POST" enctype="multipart/form-data">
+          <div class="form-group">
+            <label for="imagen">Arrastra una imagen:</label>
+            <input type="file" class="form-control-file" name="imagen" id="imagen" hidden>
+
+            <div id="drop-area">
+              <p>Arrastra y suelta una imagen aquí o haz clic para seleccionar un archivo</p>
+              <input type="file" id="fileElem" multiple>
+              <img id="preview-imagen" src="#" alt="Previsualización de la imagen"> 
+              <div class="spinner-border text-primary" role="status"> <span class="sr-only">Cargando...</span> </div>
+            </div>
+
+            <div id="loading-imagen" class="spinner-border text-primary" role="status" style="display: none;">
+              <span class="sr-only">Cargando...</span>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary">Escanear</button>
+        </form>
+        <div id="loading-escaneo" class="spinner-border text-primary" role="status" style="display: none;">
+          <span class="sr-only">Escaneando...</span>
+        </div>
+        <div id="resultado" class="mt-3"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.min.js"></script>
+  <script>
+    const form = document.querySelector('form');
+    const resultadoDiv = document.getElementById('resultado');
+    const inputImagen = document.getElementById('imagen');
+    const loadingImagen = document.getElementById('loading-imagen');
+    const loadingEscaneo = document.getElementById('loading-escaneo');
+    const previewImagen = document.getElementById('preview-imagen'); 
+    const dropArea = document.getElementById('drop-area'); 
+
+    //  -----  Drag and Drop  -----
+    let fileElem = document.getElementById('fileElem');
+
+    // Prevenir el comportamiento por defecto del navegador
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+      dropArea.addEventListener(eventName, preventDefaults, false)
+    });
+
+    // Resaltar el área al arrastrar una imagen sobre ella
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropArea.addEventListener(eventName, highlight, false)
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropArea.addEventListener(eventName, unhighlight, false)
+    });
+
+    // Manejar la imagen al soltarla
+    dropArea.addEventListener('drop', handleDrop, false);
+
+    function preventDefaults (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
+
+    function highlight(e) {
+      dropArea.classList.add('highlight')
+    }
+
+    function unhighlight(e) {
+      dropArea.classList.remove('highlight')
+    }
+
+    function handleDrop(e) {
+      var dt = e.dataTransfer
+      var files = dt.files
+
+      handleFiles(files)
+    }
+
+    // Simular clic en el input file al hacer clic en el área
+    dropArea.addEventListener('click', (e) => {
+      fileElem.click();
+    });
+
+    fileElem.addEventListener('change', (e) => {
+      handleFiles(e.target.files);
+    });
+
+    function handleFiles(files) {
+      // Solo procesar la primera imagen si se arrastran varias
+      const archivo = files[0]; 
+      
+      if (archivo) {
+        // Mostrar el loading dentro del drop-area
+        dropArea.querySelector('.spinner-border').style.display = 'block'; 
+        
+        const reader = new FileReader();
+
+        reader.onload = (e) => {
+          // Ocultar el párrafo dentro del drop-area
+          dropArea.querySelector('p').style.display = 'none'; 
+          previewImagen.src = e.target.result; 
+          previewImagen.style.display = 'block'; 
+          // Ocultar el loading después de que la imagen se cargue
+          dropArea.querySelector('.spinner-border').style.display = 'none'; 
+          // Asignar el archivo al input original para que se envíe con el formulario
+          inputImagen.files = files; 
+        }
+        reader.readAsDataURL(archivo); 
+      } else {
+        previewImagen.src = '#'; 
+        previewImagen.style.display = 'none'; 
+        // Mostrar el párrafo si no hay imagen
+        dropArea.querySelector('p').style.display = 'block'; 
+        // Ocultar el loading si no hay imagen
+        dropArea.querySelector('.spinner-border').style.display = 'none'; 
+      }
+    }
+    //  -----  Fin Drag and Drop  -----
+
+    inputImagen.addEventListener('change', (event) => {
+      // Mostrar el loading dentro del drop-area
+      dropArea.querySelector('.spinner-border').style.display = 'block'; 
+      
+      const archivo = event.target.files[0]; 
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        // Ocultar el párrafo dentro del drop-area
+        dropArea.querySelector('p').style.display = 'none'; 
+        previewImagen.src = e.target.result; 
+        previewImagen.style.display = 'block'; 
+        // Ocultar el loading después de que la imagen se cargue
+        dropArea.querySelector('.spinner-border').style.display = 'none'; 
+      }
+
+      if (archivo) {
+        reader.readAsDataURL(archivo); 
+      } else {
+        previewImagen.src = '#'; 
+        previewImagen.style.display = 'none'; 
+        // Mostrar el párrafo si no hay imagen
+        dropArea.querySelector('p').style.display = 'block'; 
+        // Ocultar el loading si no hay imagen
+        dropArea.querySelector('.spinner-border').style.display = 'none'; 
+      }
+    });
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+
+      const formData = new FormData(form);
+
+      loadingEscaneo.style.display = 'block'; 
+
+      fetch('/', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        resultadoDiv.textContent = data.texto;
+        loadingEscaneo.style.display = 'none'; 
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        resultadoDiv.textContent = 'Error al escanear la imagen.';
+        loadingEscaneo.style.display = 'none';
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+body {
+    background-color: #f8f9fa; 
+  }
+  .container {
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); 
+    padding: 30px;
+    background-color: #ffffff;
+  }
+  #resultado {
+    white-space: pre-wrap; 
+    font-family: monospace; 
+  }
+  #loading-imagen, #loading-escaneo {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px; 
+  }
+  /* Estilos para el área de arrastrar y soltar */
+  #drop-area {
+    border: 2px dashed #ccc;
+    border-radius: 20px;
+    width: 400px; /* Ajusta el ancho según tus necesidades */
+    height: 200px; /* Ajusta la altura según tus necesidades */
+    margin: 20px auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  #drop-area.highlight {
+    border-color: purple;
+  }
+  #fileElem {
+    display: none;
+  }
